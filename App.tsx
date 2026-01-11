@@ -6,14 +6,14 @@ import {
   TrendingDown, 
   Target, 
   CreditCard, 
-  PlusCircle,
   History,
-  Info
+  Sparkles
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import TransactionsPage from './components/TransactionsPage';
 import LoansPage from './components/LoansPage';
 import GoalsPage from './components/GoalsPage';
+import AIAnalyst from './components/AIAnalyst';
 import { UserFinance, Transaction, Loan, Goal, TransactionType } from './types';
 
 const INITIAL_DATA: UserFinance = {
@@ -32,7 +32,7 @@ const INITIAL_DATA: UserFinance = {
 };
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'loans' | 'goals'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'loans' | 'goals' | 'ai-analyst'>('dashboard');
   const [finance, setFinance] = useState<UserFinance>(() => {
     const saved = localStorage.getItem('amar_hisab_data');
     return saved ? JSON.parse(saved) : INITIAL_DATA;
@@ -94,6 +94,7 @@ const App: React.FC = () => {
           <NavItem active={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} icon={<History />} label="লেনদেন" />
           <NavItem active={activeTab === 'loans'} onClick={() => setActiveTab('loans')} icon={<CreditCard />} label="ঋণ ও কিস্তি" />
           <NavItem active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon={<Target />} label="লক্ষ্যমাত্রা" />
+          <NavItem active={activeTab === 'ai-analyst'} onClick={() => setActiveTab('ai-analyst')} icon={<Sparkles />} label="এআই এনালিস্ট" />
         </nav>
         <div className="p-4 border-t border-slate-800">
           <div className="bg-slate-800/50 p-4 rounded-xl">
@@ -109,6 +110,7 @@ const App: React.FC = () => {
         <MobileNavItem active={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} icon={<History />} />
         <MobileNavItem active={activeTab === 'loans'} onClick={() => setActiveTab('loans')} icon={<CreditCard />} />
         <MobileNavItem active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon={<Target />} />
+        <MobileNavItem active={activeTab === 'ai-analyst'} onClick={() => setActiveTab('ai-analyst')} icon={<Sparkles />} />
       </nav>
 
       {/* Main Content Area */}
@@ -123,6 +125,7 @@ const App: React.FC = () => {
         )}
         {activeTab === 'loans' && <LoansPage loans={finance.loans} onAdd={addLoan} />}
         {activeTab === 'goals' && <GoalsPage goals={finance.goals} onAdd={addGoal} />}
+        {activeTab === 'ai-analyst' && <AIAnalyst finance={finance} />}
       </main>
     </div>
   );
