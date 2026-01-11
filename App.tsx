@@ -7,40 +7,32 @@ import {
   CreditCard, 
   History,
   Sparkles,
-  Users
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import TransactionsPage from './components/TransactionsPage';
 import LoansPage from './components/LoansPage';
 import GoalsPage from './components/GoalsPage';
 import AIAnalyst from './components/AIAnalyst';
-import SpecialPaymentsPage from './components/SpecialPaymentsPage';
-import { UserFinance, Transaction, Loan, Goal, TransactionType, SpecialPayment } from './types';
+import { UserFinance, Transaction, Loan, Goal, TransactionType } from './types';
 
 const INITIAL_DATA: UserFinance = {
-  bankBalance: 500000,
-  transactions: [
-    { id: '1', date: new Date().toISOString(), amount: 45000, type: TransactionType.INCOME, category: 'বেতন', note: 'জানুয়ারি মাসের বেতন' }
-  ],
+  bankBalance: 0,
+  transactions: [],
   loans: [],
-  goals: [],
-  specialPayments: [
-    { id: 'sp1', name: 'আব্বুর একাউন্ট', totalAmount: 0, paidAmount: 0, type: 'MONTHLY' },
-    { id: 'sp2', name: 'তমা', totalAmount: 120000, paidAmount: 0, type: 'FIXED' },
-    { id: 'sp3', name: 'মামা', totalAmount: 70000, paidAmount: 0, type: 'FIXED' },
-    { id: 'sp4', name: 'বকেয়া কিস্তি', totalAmount: 100000, paidAmount: 0, type: 'FIXED' }
-  ]
+  goals: []
 };
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'loans' | 'goals' | 'ai-analyst' | 'special-payments'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'loans' | 'goals' | 'ai-analyst'>('dashboard');
   const [finance, setFinance] = useState<UserFinance>(() => {
-    const saved = localStorage.getItem('amar_hisab_data_v2');
+    const saved = localStorage.getItem('amar_hisab_data');
     return saved ? JSON.parse(saved) : INITIAL_DATA;
   });
 
   useEffect(() => {
-    localStorage.setItem('amar_hisab_data_v2', JSON.stringify(finance));
+    localStorage.setItem('amar_hisab_data', JSON.stringify(finance));
   }, [finance]);
 
   const addTransaction = (t: Omit<Transaction, 'id'>) => {
@@ -54,33 +46,45 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleSpecialPayment = (id: string, amount: number) => {
-    setFinance(prev => {
-      const updatedPayments = prev.specialPayments.map(p => 
-        p.id === id ? { ...p, paidAmount: p.paidAmount + amount } : p
-      );
-      
-      const payment = prev.specialPayments.find(p => p.id === id);
-      const newTransaction: Transaction = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        amount: amount,
-        type: TransactionType.EXPENSE,
-        category: 'বিশেষ পেমেন্ট',
-        note: `${payment?.name} কে প্রদান`
-      };
+  const addLoan = (l: Omit<Loan, 'id'>) => {
+    setFinance(prev => ({
+      ...prev,
+      loans: [...prev.loans, { ...l, id: Date.now().toString() }]
+    }));
+  };
 
-      return {
-        ...prev,
-        specialPayments: updatedPayments,
-        bankBalance: prev.bankBalance - amount,
-        transactions: [newTransaction, ...prev.transactions]
-      };
-    });
+  const addGoal = (g: Omit<Goal, 'id'>) => {
+    setFinance(prev => ({
+      ...prev,
+      goals: [...prev.goals, { ...g, id: Date.now().toString() }]
+    }));
+  };
+
+  const deleteTransaction = (id: string) => {
+    const transaction = finance.transactions.find(t => t.id === id);
+    if (!transaction) return;
+    setFinance(prev => ({
+      ...prev,
+      transactions: prev.transactions.filter(t => t.id !== id),
+      bankBalance: transaction.type === TransactionType.INCOME 
+        ? prev.bankBalance - transaction.amount 
+        : prev.bankBalance + transaction.amount
+    }));
+  };
+
+  const resetAllData = () => {
+    const confirmReset = window.confirm("আপনি কি নিশ্চিত যে সব ডেটা মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা সম্ভব নয়।");
+    if (confirmReset) {
+      localStorage.removeItem('amar_hisab_data');
+      setFinance(INITIAL_DATA);
+      setActiveTab('dashboard');
+      alert("সব তথ্য সফলভাবে মুছে ফেলা হয়েছে।");
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-24 md:pb-0 md:pl-64">
+      {/* Sidebar - Desktop */}
       <aside className="fixed left-0 top-0 h-full w-64 bg-slate-900 border-r border-slate-800 hidden md:flex flex-col z-40">
         <div className="p-6">
           <h1 className="text-2xl font-bold text-emerald-500 flex items-center gap-2">
@@ -90,46 +94,52 @@ const App: React.FC = () => {
         </div>
         <nav className="flex-1 px-4 space-y-2 mt-4">
           <NavItem active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutDashboard />} label="ড্যাশবোর্ড" />
-          <NavItem active={activeTab === 'special-payments'} onClick={() => setActiveTab('special-payments')} icon={<Users />} label="পাওনাদার" />
           <NavItem active={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} icon={<History />} label="লেনদেন" />
           <NavItem active={activeTab === 'loans'} onClick={() => setActiveTab('loans')} icon={<CreditCard />} label="ঋণ ও কিস্তি" />
           <NavItem active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon={<Target />} label="লক্ষ্যমাত্রা" />
           <NavItem active={activeTab === 'ai-analyst'} onClick={() => setActiveTab('ai-analyst')} icon={<Sparkles />} label="এআই এনালিস্ট" />
         </nav>
-        <div className="p-4 border-t border-slate-800">
+        
+        <div className="p-4 space-y-3">
           <div className="bg-slate-800/50 p-4 rounded-xl">
             <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">মোট ব্যালেন্স</p>
             <p className="text-xl font-bold text-emerald-400">৳ {finance.bankBalance.toLocaleString()}</p>
           </div>
+          
+          <button 
+            onClick={resetAllData}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all text-sm font-medium"
+          >
+            <Trash2 size={16} />
+            সব রিসেট করুন
+          </button>
         </div>
       </aside>
 
+      {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around p-3 md:hidden z-50">
         <MobileNavItem active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutDashboard />} />
-        <MobileNavItem active={activeTab === 'special-payments'} onClick={() => setActiveTab('special-payments')} icon={<Users />} />
         <MobileNavItem active={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} icon={<History />} />
         <MobileNavItem active={activeTab === 'loans'} onClick={() => setActiveTab('loans')} icon={<CreditCard />} />
-        <MobileNavItem active={activeTab === 'ai-analyst'} onClick={() => setActiveTab('ai-analyst')} icon={<Sparkles />} />
+        <MobileNavItem active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon={<Target />} />
+        <button onClick={resetAllData} className="p-3 text-rose-500">
+          <Trash2 size={24} />
+        </button>
       </nav>
 
+      {/* Main Content Area */}
       <main className="p-4 md:p-8 max-w-6xl mx-auto">
         {activeTab === 'dashboard' && <Dashboard finance={finance} />}
         {activeTab === 'transactions' && (
           <TransactionsPage 
             transactions={finance.transactions} 
             onAdd={addTransaction} 
-            onDelete={() => {}} 
+            onDelete={deleteTransaction}
           />
         )}
-        {activeTab === 'loans' && <LoansPage loans={finance.loans} onAdd={() => {}} />}
-        {activeTab === 'goals' && <GoalsPage goals={finance.goals} onAdd={() => {}} />}
+        {activeTab === 'loans' && <LoansPage loans={finance.loans} onAdd={addLoan} />}
+        {activeTab === 'goals' && <GoalsPage goals={finance.goals} onAdd={addGoal} />}
         {activeTab === 'ai-analyst' && <AIAnalyst finance={finance} />}
-        {activeTab === 'special-payments' && (
-          <SpecialPaymentsPage 
-            payments={finance.specialPayments} 
-            onPay={handleSpecialPayment} 
-          />
-        )}
       </main>
     </div>
   );

@@ -22,21 +22,13 @@ export interface Loan {
   nextPaymentDate: string;
 }
 
-export interface SpecialPayment {
-  id: string;
-  name: string;
-  totalAmount: number;
-  paidAmount: number;
-  type: 'MONTHLY' | 'FIXED';
-}
-
 export interface Goal {
   id: string;
   name: string;
   targetAmount: number;
   currentAmount: number;
   deadline: string;
-  type: 'SHORT' | 'LONG';
+  type: 'SHORT' | 'LONG'; // SHORT: 1 year, LONG: 2-3 years
 }
 
 export interface UserFinance {
@@ -44,5 +36,4 @@ export interface UserFinance {
   transactions: Transaction[];
   loans: Loan[];
   goals: Goal[];
-  specialPayments: SpecialPayment[];
 }
